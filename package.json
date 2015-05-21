@@ -13,6 +13,7 @@
     "express": "~4.12.4",
     "morgan": "~1.5.3",
     "serve-favicon": "~2.2.1",
-    "mongoose": "^4.0.3"
+    "mongoose": "^4.0.3",
+    "jsonwebtoken": "^5.0.1"
   }
 }
