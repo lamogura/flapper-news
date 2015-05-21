@@ -8,7 +8,12 @@ function($stateProvider, $urlRouterProvider){
     .state('home', {
       url: '/home',
       templateUrl: '/home.html',
-      controller: 'MainCtrl'
+      controller: 'MainCtrl',
+      resolve: {
+        postPromise: ['posts', function(posts) {
+          return posts.getAll()
+        }]
+      }
     })
     .state('posts', {
       url: '/posts/{id}',
@@ -19,16 +24,17 @@ function($stateProvider, $urlRouterProvider){
   $urlRouterProvider.otherwise('home')
 }])
 
-app.factory('posts', [function(){
+app.factory('posts', ['$http', function($http){
   var o = {
-    data: [
-      {title: 'post 1', upvotes: 5, comments: []},
-      {title: 'post 2', upvotes: 2, comments: []},
-      {title: 'post 3', upvotes: 15, comments: []},
-      {title: 'post 4', upvotes: 9, comments: []},
-      {title: 'post 5', upvotes: 4, comments: []}
-    ]
+    posts: []
   }
+
+  o.getAll = function() {
+    return $http.get('/posts').success(function(posts) {
+      angular.copy(posts, o.posts)
+    })
+  }
+  
   return o
 }])
 
@@ -38,7 +44,7 @@ app.controller('MainCtrl', [
 function($scope, posts){
   $scope.test = 'Hello World'
   
-  $scope.posts = posts.data
+  $scope.posts = posts.posts
 
   $scope.incrementUpvotes = function(post){
     post.upvotes += 1
@@ -66,7 +72,7 @@ app.controller('PostsCtrl', [
 '$stateParams',
 'posts',
 function($scope, $stateParams, posts){
-  $scope.post = posts.data[$stateParams.id]
+  $scope.post = posts.posts[$stateParams.id]
 
   $scope.addComment = function(){
     if (!$scope.body || $scope.body === '') return

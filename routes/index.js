@@ -7,6 +7,7 @@ var mongoose = require('mongoose')
 var Post     = require('../models/Posts')
 var Comment  = require('../models/Comments')
 
+
 router.param('post', function(req, res, next, id) {
   var query = Post.findById(id)
 
@@ -68,6 +69,7 @@ router.get('/posts/:post', function(req, res) {
     if (err) return next(err)
 
     res.json(req.post)
+  })
 })
 
 router.get('/posts', function(req, res, next) {
@@ -79,12 +81,17 @@ router.get('/posts', function(req, res, next) {
 })
 
 router.post('/posts', function(req, res, next) {
+  console.log(req.body)
   var post = new Post(req.body)
   post.save(function(err, post) {
     if (err) return next(err)
 
     res.json(post)
   })
+})
+
+router.get('/', function(req, res) {
+  res.render('index')
 })
 
 module.exports = router
