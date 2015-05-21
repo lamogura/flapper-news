@@ -4,10 +4,9 @@ bcrypt   = require('bcrypt')
 
 SALT_WORK_FACTOR = 10
 
-UserSchema = new mongoose.Schema({
-  username: { type: String, required: true, index: { unique: true } },
+UserSchema = new mongoose.Schema
+  username: { type: String, required: true, index: { unique: true } }
   password: { type: String, required: true }
-})
 
 UserSchema.pre 'save', (next) ->
   user = this

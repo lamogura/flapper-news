@@ -2,7 +2,7 @@ express  = require('express')
 router   = express.Router()
 passport = require('passport')
 
-User     = require('../models/Users')
+User = require('../models/User')
 
 router.get('/', (req, res) -> res.render('index'))
 

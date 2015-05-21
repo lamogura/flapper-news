@@ -1,8 +1,8 @@
 express  = require('express')
 router   = express.Router()
 
-Post     = require('../models/Posts')
-Comment  = require('../models/Comments')
+Post    = require('../models/Post')
+Comment = require('../models/Comment')
 
 jwt  = require('express-jwt')
 auth = jwt({ secret: "SECRETWORDS", userProperty: 'payload' })
