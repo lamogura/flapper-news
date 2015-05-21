@@ -10,7 +10,7 @@ function($stateProvider, $urlRouterProvider){
       templateUrl: '/home.html',
       controller: 'MainCtrl',
       resolve: {
-        postPromise: ['posts', function(posts) {
+        postsPromise: ['posts', function(posts) {
           return posts.getAll()
         }]
       }
@@ -18,7 +18,12 @@ function($stateProvider, $urlRouterProvider){
     .state('posts', {
       url: '/posts/{id}',
       templateUrl: '/posts.html',
-      controller: 'PostsCtrl'
+      controller: 'PostsCtrl',
+      resolve: {
+        resolvedPost: ['$stateParams', 'posts', function($stateParams, posts) {
+          return posts.get($stateParams.id)
+        }]
+      }
     })
 
   $urlRouterProvider.otherwise('home')
@@ -27,6 +32,12 @@ function($stateProvider, $urlRouterProvider){
 app.factory('posts', ['$http', function($http){
   var o = {
     posts: []
+  }
+
+  o.get = function(id) {
+    return $http.get('/posts/' + id).then(function(res) {
+      return res.data
+    })
   }
 
   o.getAll = function() {
@@ -48,6 +59,17 @@ app.factory('posts', ['$http', function($http){
     })
   }
 
+  o.addComment = function(id, comment) {
+    return $http.post('/posts/' + id + '/comments', comment)
+  }
+
+  o.upvoteComment = function(post, comment) {
+    commentUrl = '/posts/' + post._id + '/comments/' + comment._id + '/upvote'
+    return $http.put(commentUrl).success(function(data) {
+      comment.upvotes += 1
+    })
+  }
+
   return o
 }])
 
@@ -55,8 +77,6 @@ app.controller('MainCtrl', [
 '$scope',
 'posts',
 function($scope, posts){
-  $scope.test = 'Hello World'
-  
   $scope.posts = posts.posts
 
   $scope.incrementUpvotes = function(post){
@@ -77,18 +97,26 @@ function($scope, posts){
 
 app.controller('PostsCtrl', [
 '$scope',
-'$stateParams',
 'posts',
-function($scope, $stateParams, posts){
-  $scope.post = posts.posts[$stateParams.id]
+'resolvedPost',
+function($scope, posts, fetchedPost){
+  $scope.post = fetchedPost
 
   $scope.addComment = function(){
     if (!$scope.body || $scope.body === '') return
-    $scope.post.comments.push({
+
+    posts.addComment($scope.post._id, {
       body: $scope.body,
       author: 'user',
       upvotes: 0
+    }).success(function(comment) {
+      $scope.post.comments.push(comment)
     })
+
     $scope.body = ''
+  }
+
+  $scope.incrementUpvotes = function(comment) {
+    posts.upvoteComment($scope.post, comment)
   }
 }])
