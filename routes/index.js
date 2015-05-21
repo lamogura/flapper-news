@@ -8,7 +8,6 @@ var Post     = require('../models/Posts')
 var Comment  = require('../models/Comments')
 var User     = require('../models/Users')
 
-
 var auth = jwt({secret: "SECRETWORDS", userProperty: 'payload'})
 
 router.post('/login', function(req, res, next) {
@@ -33,8 +32,7 @@ router.post('/register', function(req, res, next) {
     return res.status(400).json({message: 'Please fill out all fields.'})
   }
 
-  var user = new User({username: req.body.username})
-  user.setPassword(req.body.password)
+  var user = new User(req.body)
   user.save(function(err) {
     if (err) return next(err)
 
