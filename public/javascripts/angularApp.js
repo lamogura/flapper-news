@@ -34,7 +34,20 @@ app.factory('posts', ['$http', function($http){
       angular.copy(posts, o.posts)
     })
   }
-  
+
+  o.create = function(post) {
+    return $http.post('/posts', post).success(function(newPost) {
+      o.posts.push(newPost)
+    })
+  }
+
+  o.upvote = function(post) {
+    var upvoteUrl = '/posts/' + post._id + '/upvote'
+    return $http.put(upvoteUrl).success(function(data) {
+      post.upvotes += 1
+    })
+  }
+
   return o
 }])
 
@@ -47,20 +60,15 @@ function($scope, posts){
   $scope.posts = posts.posts
 
   $scope.incrementUpvotes = function(post){
-    post.upvotes += 1
+    posts.upvote(post)
   }
 
   $scope.addPost = function(){
     if (!$scope.title || $scope.title === '') return
 
-    $scope.posts.push({
-      title: $scope.title, 
-      link: $scope.link,
-      upvotes: 0,
-      comments: [
-        {author: 'Joe', body: 'Cool post!', upvotes: 0},
-        {author: 'Bob', body: 'Great idea but everything is wrong!', upvotes: 0}
-      ]
+    posts.create({
+      title: $scope.title,
+      link: $scope.link
     })
     $scope.title = ''
     $scope.link = ''
