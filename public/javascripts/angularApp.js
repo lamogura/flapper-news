@@ -25,11 +25,81 @@ function($stateProvider, $urlRouterProvider){
         }]
       }
     })
+    .state('login', {
+      url: '/login',
+      templateUrl: '/login.html',
+      controller: 'AuthCtrl',
+      onEnter: ['$state', 'auth', function($state, auth) {
+        if (auth.isLoggedIn()) {
+          $state.go('home')
+        }
+      }]
+    })
+    .state('register', {
+      url: '/register',
+      templateUrl: '/register.html',
+      controller: 'AuthCtrl',
+      onEnter: ['$state', 'auth', function($state, auth) {
+        if (auth.isLoggedIn()) {
+          $state.go('home')
+        }
+      }]
+    })
 
   $urlRouterProvider.otherwise('home')
 }])
 
-app.factory('posts', ['$http', function($http){
+app.factory('auth', ['$http', '$window', function($http, $window) {
+  var auth = {}
+
+  auth.saveToken = function(token) {
+    $window.localStorage['flapper-news-token'] = token
+  }
+
+  auth.getToken = function() {
+    return $window.localStorage['flapper-news-token']
+  }
+
+  auth.isLoggedIn = function() {
+    var token = auth.getToken()
+
+    if (token) {
+      var payload = JSON.parse($window.atob(token.split('.')[1]))
+      return payload.exp > Date.now() / 1000
+    }
+
+    return false
+  }
+
+  auth.currentUser = function() {
+    if (auth.isLoggedIn()) {
+      var token = auth.getToken()
+      var payload = JSON.parse($window.atob(token.split('.')[1]))
+
+      return payload.username
+    }
+  }
+
+  auth.register = function(user) {
+    return $http.post('/register', user).success(function(data) {
+      auth.saveToken(data.token)
+    })
+  }
+
+  auth.logIn = function(user) {
+    return $http.post('/login', user).success(function(data) {
+      auth.saveToken(data.token)
+    })
+  }
+
+  auth.logOut = function() {
+    $window.localStorage.removeItem('flapper-news-token')
+  }
+
+  return auth
+}])
+
+app.factory('posts', ['$http', 'auth', function($http, auth){
   var o = {
     posts: []
   }
@@ -46,26 +116,31 @@ app.factory('posts', ['$http', function($http){
     })
   }
 
+  // auth required
   o.create = function(post) {
-    return $http.post('/posts', post).success(function(newPost) {
+    var opts = {headers: {Authorization: 'Bearer ' + auth.getToken()}}
+    return $http.post('/posts', post, opts).success(function(newPost) {
       o.posts.push(newPost)
     })
   }
 
   o.upvote = function(post) {
     var upvoteUrl = '/posts/' + post._id + '/upvote'
-    return $http.put(upvoteUrl).success(function(data) {
+    var opts = {headers: {Authorization: 'Bearer ' + auth.getToken()}}
+    return $http.put(upvoteUrl, null, opts).success(function(data) {
       post.upvotes += 1
     })
   }
 
   o.addComment = function(id, comment) {
-    return $http.post('/posts/' + id + '/comments', comment)
+    var opts = {headers: {Authorization: 'Bearer ' + auth.getToken()}}
+    return $http.post('/posts/' + id + '/comments', comment, opts)
   }
 
   o.upvoteComment = function(post, comment) {
+    var opts = {headers: {Authorization: 'Bearer ' + auth.getToken()}}
     commentUrl = '/posts/' + post._id + '/comments/' + comment._id + '/upvote'
-    return $http.put(commentUrl).success(function(data) {
+    return $http.put(commentUrl, null, opts).success(function(data) {
       comment.upvotes += 1
     })
   }
@@ -76,7 +151,8 @@ app.factory('posts', ['$http', function($http){
 app.controller('MainCtrl', [
 '$scope',
 'posts',
-function($scope, posts){
+'auth',
+function($scope, posts, auth){
   $scope.posts = posts.posts
 
   $scope.incrementUpvotes = function(post){
@@ -93,13 +169,16 @@ function($scope, posts){
     $scope.title = ''
     $scope.link = ''
   }
+
+  $scope.isLoggedIn = auth.isLoggedIn
 }])
 
 app.controller('PostsCtrl', [
 '$scope',
 'posts',
 'resolvedPost',
-function($scope, posts, fetchedPost){
+'auth',
+function($scope, posts, fetchedPost, auth){
   $scope.post = fetchedPost
 
   $scope.addComment = function(){
@@ -119,4 +198,44 @@ function($scope, posts, fetchedPost){
   $scope.incrementUpvotes = function(comment) {
     posts.upvoteComment($scope.post, comment)
   }
+
+  $scope.isLoggedIn = auth.isLoggedIn
+}])
+
+app.controller('AuthCtrl', [
+'$scope',
+'$state',
+'auth',
+function($scope, $state, auth) {
+  $scope.user = {}
+
+  $scope.register = function() {
+    auth.register($scope.user)
+      .error(function(err) {
+        $scope.error = err;
+      })
+      .then(function() {
+        $state.go('home')
+      })
+  }
+
+  $scope.logIn = function() {
+    auth.logIn($scope.user)
+      .error(function(err) {
+        $scope.error = err
+      })
+      .then(function() {
+        $state.go('home')
+      })
+  }
+}
+])
+
+app.controller('NavCtrl', [
+'$scope',
+'auth',
+function($scope, auth) {
+  $scope.isLoggedIn = auth.isLoggedIn
+  $scope.currentUser = auth.currentUser
+  $scope.logOut = auth.logOut
 }])
