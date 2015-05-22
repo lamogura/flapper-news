@@ -1,3 +1,5 @@
+var angular = require('angular')
+
 angular.module('flapperNews')
   .controller('MainCtrl', [
   '$scope', 'posts', 'auth', function($scope, posts, auth) {

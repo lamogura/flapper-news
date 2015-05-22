@@ -4,6 +4,7 @@ favicon      = require('serve-favicon')
 logger       = require('morgan')
 cookieParser = require('cookie-parser')
 bodyParser   = require('body-parser')
+browserify   = require('browserify-middleware')
 passport     = require('passport')
 
 mongoose = require('mongoose')
@@ -26,6 +27,8 @@ app.use cookieParser()
 app.use express.static(path.join(__dirname, 'public'))
 
 app.use passport.initialize()
+
+app.use '/javascripts/bundle.js', browserify('./angular/main.js')
 
 app.use '/', require('./routes/index')
 

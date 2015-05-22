@@ -1,0 +1,2 @@
+require("./authFactory")
+require("./postsFactory")

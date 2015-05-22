@@ -1,3 +1,5 @@
+var angular = require('angular')
+
 angular.module('flapperNews')
   .controller('NavCtrl', [
   '$scope', 'auth', function($scope, auth) {

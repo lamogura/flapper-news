@@ -1,3 +1,5 @@
+var angular = require('angular')
+
 angular.module('flapperNews')
   .factory('auth', [
   '$http', '$window', function($http, $window) {
